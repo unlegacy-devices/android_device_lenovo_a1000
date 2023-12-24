@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Inherit from scx30g2 common configs
--include device/samsung/scx30g2-common/BoardConfigCommon.mk
+-include device/lenovo/scx30g2-common/BoardConfigCommon.mk
 
 # Inherit from the proprietary version
 -include vendor/lenovo/a1000/BoardConfigVendor.mk
