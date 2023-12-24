@@ -34,7 +34,7 @@ jobs:
         git clone https://github.com/unlegacy-devices/android_device_lenovo_a1000 -b cm-13.0 ~/TWRP/device/lenovo/a1000
         git clone https://github.com/unlegacy-devices/android_kernel_samsung_grandprimeve3g -b cm-13.0 ~/TWRP/kernel/samsung/grandprimeve3g
         git clone https://github.com/unlegacy-devices/android_vendor_lenovo_a1000 -b cm-13.0 ~/TWRP/vendor/lenovo/a1000
-        git clone --depth 1 --branch android-6.0.1_r37 --single-branch https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8 /opt/toolchains/arm-eabi-4.8/
+        git clone --depth 1 --branch android-6.0.1_r40 --single-branch https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8 /opt/toolchains/arm-eabi-4.8/
         python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
     - name: Building LineageOS
       run: |
