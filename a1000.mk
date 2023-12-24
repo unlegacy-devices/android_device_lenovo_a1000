@@ -21,13 +21,13 @@ DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
 $(call inherit-product-if-exists, vendor/lenovo/a1000/a1000-vendor.mk)
 
 # Inherit from scx30g2-common device configuration
-$(call inherit-product, device/samsung/scx30g2-common/common.mk)
+$(call inherit-product, device/lenovo/scx30g2-common/common.mk)
 
 DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
 
 # Boot animation
-TARGET_SCREEN_HEIGHT := 960
-TARGET_SCREEN_WIDTH := 540
+TARGET_SCREEN_HEIGHT := 800
+TARGET_SCREEN_WIDTH := 480
 
 # Keylayouts
 PRODUCT_COPY_FILES += \
