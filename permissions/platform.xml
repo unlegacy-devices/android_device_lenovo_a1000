@@ -50,10 +50,6 @@
         <group gid="vpn" />
     </permission>
 
-    <permission name="android.permission.SYSTEM_GROUP_INTERNAL" >
-        <group gid="system" />
-    </permission>
-
     <permission name="android.permission.INTERNET" >
         <group gid="inet" />
     </permission>
@@ -69,7 +65,6 @@
     <permission name="android.permission.WRITE_EXTERNAL_STORAGE" >
         <group gid="sdcard_r" />
         <group gid="sdcard_rw" />
-	<group gid="media_rw" />
     </permission>
 
     <permission name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" >
@@ -80,7 +75,6 @@
 
     <permission name="android.permission.WRITE_MEDIA_STORAGE" >
         <group gid="media_rw" />
-	<group gid="sdcard_rw" />
     </permission>
 
     <permission name="android.permission.ACCESS_MTP" >
@@ -156,11 +150,9 @@
             file="/system/framework/android.test.runner.jar" />
     <library name="javax.obex"
             file="/system/framework/javax.obex.jar"/>
-    <library name="javax.btobex"
-            file="/system/framework/javax.btobex.jar"/>
 
     <!-- These are the standard packages that are white-listed to always have internet
          access while in power save mode, even if they aren't in the foreground. -->
     <allow-in-power-save package="com.android.providers.downloads" />
-
+    <backup-transport-whitelisted-service service="com.google.android.gms/.backup.BackupTransportService" />
 </permissions>

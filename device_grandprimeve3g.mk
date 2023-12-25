@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_PATH := device/samsung/grandprimeve3g
+LOCAL_PATH := device/lenovo/a1000
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, device/common/gps/gps_us_supl.mk)
 
-$(call inherit-product-if-exists, vendor/samsung/grandprimeve3g/grandprimeve3g-vendor.mk)
+$(call inherit-product-if-exists, vendor/lenovo/a1000/a1000-vendor.mk)
 
 # Overlay
 DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
@@ -27,12 +27,14 @@ PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := hdpi
 
 # Boot animation
-TARGET_SCREEN_HEIGHT := 960
-TARGET_SCREEN_WIDTH := 540
+TARGET_SCREEN_HEIGHT := 800
+TARGET_SCREEN_WIDTH := 480
 
 # Bluetooth config
 BLUETOOTH_CONFIGS := \
-	$(LOCAL_PATH)/configs/bluetooth/bt_vendor.conf
+	$(LOCAL_PATH)/configs/bluetooth/bt_stack.conf \
+	$(LOCAL_PATH)/configs/bluetooth/bt_did.conf \
+	$(LOCAL_PATH)/configs/bluetooth/auto_pair_devlist.conf
 
 PRODUCT_COPY_FILES += \
 	$(foreach f,$(BLUETOOTH_CONFIGS),$(f):system/etc/bluetooth/$(notdir $(f)))
@@ -57,10 +59,6 @@ PRODUCT_PACKAGES += \
 	libmemoryheapion_legacy \
 	libion
 
-# Doze
-PRODUCT_PACKAGES += \
-	SamsungDoze
-
 # Codecs
 PRODUCT_PACKAGES += \
 	omxregister-bellagio \
@@ -75,10 +73,6 @@ PRODUCT_PACKAGES += \
 # Lights
 PRODUCT_PACKAGES += \
 	lights.sc8830
-
-# Device-specific packages
-PRODUCT_PACKAGES += \
-	SamsungServiceMode
 
 # Bluetooth
 PRODUCT_PACKAGES += \
@@ -111,9 +105,7 @@ PRODUCT_PACKAGES += \
 
 WIFI_CONFIGS := \
 	$(LOCAL_PATH)/configs/wifi/wpa_supplicant.conf \
-	$(LOCAL_PATH)/configs/wifi/wpa_supplicant_overlay.conf \
-	$(LOCAL_PATH)/configs/wifi/p2p_supplicant_overlay.conf \
-	$(LOCAL_PATH)/configs/wifi/nvram_net.txt
+	$(LOCAL_PATH)/configs/wifi/wpa_supplicant_overlay.conf
 
 PRODUCT_COPY_FILES += \
 	$(foreach f,$(WIFI_CONFIGS),$(f):system/etc/wifi/$(notdir $(f)))
@@ -130,10 +122,6 @@ ROOTDIR_FILES := \
 	$(LOCAL_PATH)/ramdisk/init.recovery.board.rc \
 	$(LOCAL_PATH)/ramdisk/init.sc8830.rc \
 	$(LOCAL_PATH)/ramdisk/init.sc8830.usb.rc \
-	$(LOCAL_PATH)/ramdisk/init.sc8830_ss.rc \
-	$(LOCAL_PATH)/ramdisk/init.grandprimeve3g.rc \
-	$(LOCAL_PATH)/ramdisk/init.grandprimeve3g_base.rc \
-	$(LOCAL_PATH)/ramdisk/init.wifi.rc \
 	$(LOCAL_PATH)/ramdisk/ueventd.sc8830.rc \
 	$(LOCAL_PATH)/ramdisk/fstab.sc8830
 
@@ -218,8 +206,8 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 
 # Set those variables here to overwrite the inherited values.
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
-PRODUCT_NAME := full_grandprimeve3g
-PRODUCT_DEVICE := grandprimeve3g
-PRODUCT_BRAND := samsung
-PRODUCT_MANUFACTURER := samsung
-PRODUCT_MODEL := SM-G531H
+PRODUCT_NAME := full_a1000
+PRODUCT_DEVICE := a1000
+PRODUCT_BRAND := lenovo
+PRODUCT_MANUFACTURER := lenovo
+PRODUCT_MODEL := A1000

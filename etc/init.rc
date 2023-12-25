@@ -1,82 +1,215 @@
+import /init.recovery.board.rc
+import /init.recovery.${ro.hardware}.rc
+
 on early-init
+    # Apply strict SELinux checking of PROT_EXEC on mmap/mprotect calls.
+    write /sys/fs/selinux/checkreqprot 0
+
+    # Set the security context for the init process.
+    # This should occur before anything else (e.g. ueventd) is started.
+    setcon u:r:init:s0
+
+    restorecon /adb_keys
     start ueventd
     start healthd
+    mkdir /mnt 0775 root system
 
 on init
-    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
+    export PATH /sbin:/system/bin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
     export EXTERNAL_STORAGE /sdcard
-
-    mkdir /mnt/shell/emulated 0700 shell shell
-    mkdir /storage/emulated 0555 root root
-
-    mkdir /mnt/media_rw/sdcard1 0700 media_rw media_rw
-    mkdir /storage/sdcard1 0700 root root
-    
-    export EXTERNAL_STORAGE /storage/emulated/legacy
-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated/0
-    export EMULATED_STORAGE_TARGET /storage/emulated
-    export SECONDARY_STORAGE /storage/extSdCard
+    export SECONDARY_STORAGE /storage/sdcard0
+    loglevel 7
 
     symlink /system/etc /etc
+    symlink /system/vendor /vendor
+    symlink /storage/sdcard0 /mnt/sdcard
+    symlink /system/etc/bluetooth /etc/bluetooth
 
     mkdir /sdcard
-    mkdir /sdcard1
-    mkdir /external_sd
     mkdir /system
     mkdir /data
     mkdir /cache
-    mkdir /preload
-    mkdir /custom
-    mkdir /efs
-    mkdir /tmp
-    mkdir /carrier
+    mkdir /sideload
+    mount tmpfs tmpfs /tmp
+    mkdir /oem
+    mkdir /systeminfo 0777 system system
+    chmod root shell /tmp
+    chmod 0775 /tmp
+    mkdir /productinfo 0777 system system
 
-    symlink /storage/sdcard0 /sdcard
-    symlink /storage/extSdCard /external_sd
-    
-    mount /tmp /tmp tmpfs
+#add for sdcard path as same as android @{
+    mkdir /storage
+    mkdir /storage/sdcard1
+    mkdir /storage/sdcard0
+#@}
 
     chown root shell /tmp
     chmod 0775 /tmp
-	
+
+    chown system root /proc/cpwcn/wdtirq
+    chmod 766 /proc/cpwcn/wdtirq
+
+    write /proc/sys/kernel/panic_on_oops 1
+
+    #mkdir /dev/usb-ffs 0770 shell shell
+    #mkdir /dev/usb-ffs/adb 0770 shell shell
+    #mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000
+    #write /sys/class/android_usb/android0/f_ffs/aliases adb
+    #setprop sys.usb.config vser,adb
+
     write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idVendor 04E8
-    write /sys/class/android_usb/android0/idProduct 6860
-    write /sys/class/android_usb/android0/functions adb
-    write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
-    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
-    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+    write /sys/class/android_usb/android0/bcdDevice 2427
+    write /sys/class/android_usb/android0/idVendor 1782
+    write /sys/class/android_usb/android0/idProduct 4d00
+    write /sys/class/android_usb/android0/functions vser
+    write /sys/class/android_usb/android0/iManufacturer Spreadtrum
+    write /sys/class/android_usb/android0/iProduct "Gadget Serial"
+    write /sys/class/android_usb/android0/iSerial 19761202
+   # write /sys/class/android_usb/android0/enable 1
+   # start adbd
+   # setprop sys.usb.state vser,adb
+
+    chown system system /sys/class/power_supply/battery/hw_switch_point
+    chown system system /sys/class/power_supply/battery/save_capacity
 
 
+#on property:sys.usb.config=adb,vser,gser
+#    write /sys/class/android_usb/android0/enable 0
+#    write /sys/class/android_usb/android0/bcdDevice 2427
+#    write /sys/class/android_usb/android0/idVendor 1782
+#    write /sys/class/android_usb/android0/idProduct 4d01
+#    write /sys/class/android_usb/android0/functions vser,adb
+#    write /sys/class/android_usb/android0/iManufacturer Spreadtrum
+#    write /sys/class/android_usb/android0/iProduct "Gadget Serial"
+#    write /sys/class/android_usb/android0/iSerial 19761202
+#    write /sys/class/android_usb/android0/enable 1
+#    start adbd
+#    setprop sys.usb.state vser,adb
+
+on fs
+    mkdir /dev/usb-ffs 0770 shell shell
+    mkdir /dev/usb-ffs/adb 0770 shell shell
+    mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000
+    mkdir /data/misc/bluedroid 0770 bluetooth net_bt_stack
+    mkdir /data/misc/bluetooth 0770 system system
+
+on post-fs-data
+       # We chown/chmod /data again so because mount is run as root + defaults
+       chown system system /data
+       chmod 0771 /data
+       # We restorecon /data in case the userdata partition has been reset.
+       restorecon /data
+       mkdir /data/misc/bluedroid 0770 bluetooth net_bt_stack
+       mkdir /data/misc/bluetooth 0770 system system
+       copy /system/etc/bluetooth/bt_stack.conf /data/misc/bluedroid/bt_stack.conf
+       chown bluetooth system /data/misc/bluedroid/bt_stack.conf
+       chmod 0640 /data/misc/bluedroid/bt_stack.conf
 on boot
-
     ifup lo
     hostname localhost
     domainname localdomain
 
     class_start default
 
+#SPRD:add for uboot operation permission @{
+    write /sys/block/mmcblk0boot0/force_ro 0
+    write /sys/block/mmcblk0boot1/force_ro 0
+# @}
+
+# SPRD: add adb in recovery @{
+on adb_enable
+    write /sys/class/android_usb/android0/iManufacturer Spreadtrum
+    write /sys/class/android_usb/android0/iProduct Spreadtrum Phone
+    write /sys/class/android_usb/android0/iSerial $ro.serialno
+    write /sys/class/android_usb/android0/f_rndis/manufacturer Spreadtrum
+    write /sys/class/android_usb/android0/f_rndis/vendorID 8
+    write /sys/class/android_usb/android0/f_rndis/wceis 1
+    mkdir /dev/usb-ffs 0770 shell shell
+    mkdir /dev/usb-ffs/adb 0770 shell shell
+    mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000
+    write /sys/class/android_usb/android0/f_ffs/aliases adb
+    setprop sys.usb.config adb,vser,gser
+# @}
+
+# Load properties from /system/ + /factory after fs mount.
+on load_all_props_action
+    load_all_props
+
+# Mount filesystems and start core system services.
+on late-init
+    trigger early-fs
+    trigger fs
+    trigger post-fs
+    trigger post-fs-data
+
+    # Load properties from /system/ + /factory after fs mount. Place
+    # this in another action so that the load will be scheduled after the prior
+    # issued fs triggers have completed.
+    trigger load_all_props_action
+
+    trigger early-boot
+    trigger boot
+
 on property:sys.powerctl=*
    powerctl ${sys.powerctl}
 
+
+
 service ueventd /sbin/ueventd
     critical
+    seclabel u:r:ueventd:s0
 
-service healthd /sbin/healthd -n
+service healthd /sbin/healthd -r
     critical
+    seclabel u:r:healthd:s0
 
 service recovery /sbin/recovery
+    class recovery
+    seclabel u:r:recovery:s0
 
-service adbd /sbin/adbd recovery
+service logd /system/bin/logd
+    class cali factorytest
+    socket logd stream 0666 logd logd
+    socket logdr seqpacket 0666 logd logd
+    socket logdw dgram 0222 logd logd
+    seclabel u:r:logd:s0
+
+service adbd /sbin/adbd --root_seclabel=u:r:su:s0 --device_banner=recovery
     disabled
     socket adbd stream 660 system system
+    seclabel u:r:adbd:s0
 
+#SPRD:use adb when debug version @{
+#@orig
 # Always start adbd on userdebug and eng builds
 on property:ro.debuggable=1
     write /sys/class/android_usb/android0/enable 1
     start adbd
+
+# Always start adbd on non-cali mode
+on property:sys.usb.config=adb,vser,gser
+# SPRD: add adb in recovery @{
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1782
+    write /sys/class/android_usb/android0/idProduct 5d06
+    write /sys/class/android_usb/android0/functions adb,vser,gser
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state $sys.usb.config
+#@}
+   #write /sys/class/android_usb/android0/enable 0
+   #write /sys/class/android_usb/android0/bcdDevice 2427
+   #write /sys/class/android_usb/android0/idVendor 1782
+   #write /sys/class/android_usb/android0/idProduct 4d01
+   #write /sys/class/android_usb/android0/functions vser,adb
+   #write /sys/class/android_usb/android0/iManufacturer Spreadtrum
+   #write /sys/class/android_usb/android0/iProduct "Gadget Serial"
+   #write /sys/class/android_usb/android0/iSerial 19761202
+   #write /sys/class/android_usb/android0/enable 1
+   #start adbd
+   #setprop sys.usb.state vser,adb
 
 # Restart adbd so it can run as root
 on property:service.adb.root=1
@@ -84,19 +217,151 @@ on property:service.adb.root=1
     restart adbd
     write /sys/class/android_usb/android0/enable 1
 
-service fuse_sdcard1 /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d /mnt/media_rw/sdcard1 /storage/extSdCard
-    class late_start
-    disabled
-       
-on property:sys.storage.ums_enabled=1
-    write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idProduct 0C03
-    write /sys/class/android_usb/android0/functions mass_storage,adb
-    write /sys/class/android_usb/android0/enable 1
+on normal
+    class_start recovery
+    trigger adb_enable
 
-on property:sys.storage.ums_enabled=0
-    write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idProduct 0C01
-    write /sys/class/android_usb/android0/functions adb
-    write /sys/class/android_usb/android0/enable ${service.adb.root}
-    
+on cali
+    mount_all /fstab.sc8830
+    mount_all /etc/recovery.fstab
+    class_start cali
+    insmod /system/lib/modules/mali.ko
+    insmod /system/lib/modules/trout_fm.ko
+
+service wcnd /system/bin/wcnd
+    class factorytest
+    user system
+    group system shell wifi inet net_bt_stack
+    seclabel u:r:wcnd:s0
+
+
+service wcnd-cali /system/bin/wcnd
+    class cali
+    user root
+    group root system shell wifi inet net_bt_stack
+    seclabel u:r:wcnd:s0
+
+
+service wcnd_eng-cali /system/bin/wcnd -G
+    class cali
+    user root
+    group root system shell wifi inet net_bt_stack
+    disabled
+    oneshot
+    seclabel u:r:wcnd:s0
+
+service console /system/bin/sh
+    console
+    class cali
+    user root
+    group root
+
+service engpcclient /system/bin/engpc
+    class cali
+    user root
+    group root sdcard_rw
+
+#cp_diskserver
+service cp_diskserver_td /system/bin/cp_diskserver t 1
+    class cali
+    user root
+    group root
+    disabled
+
+service cp_diskserver_w /system/bin/cp_diskserver w 1
+    class cali
+    user root
+    group root
+    disabled
+
+service cp_diskserver_l /system/bin/cp_diskserver l 1
+    class cali
+    user root
+    group system radio shell
+    disabled
+    oneshot
+
+service cp_diskserver_lf /system/bin/cp_diskserver lf 1
+    class cali
+    user root
+    group system radio shell
+    disabled
+    oneshot
+
+on property:persist.modem.w.enable=1
+    start cp_diskserver_w
+
+on property:persist.modem.t.enable=1
+    start cp_diskserver_td
+
+on property:persist.modem.l.enable=1
+    start cp_diskserver_l
+
+on property:persist.modem.lf.enable=1
+    start cp_diskserver_tl
+
+#add for factorytest
+on factorytest
+       mount_all /etc/recovery.fstab
+    chown system system /data
+    chmod 0771 /data
+    mkdir /data/local 0751 root root
+    mkdir /data/local/media 0751 media media
+       mkdir /etc/bluetooth 0777 root root
+       mkdir /data/cg/ 0777 system system
+       mkdir /data/cg/online 0777 system system
+       mkdir /data/cg/supl 0777 system system
+       class_start factorytest
+       trigger adb_enable
+
+       setprop gps.port ttyV1
+
+service factorytest /system/bin/factorytest
+    class factorytest
+    user root
+    group root sdcard_rw
+
+service GPSenseEngine /system/bin/GPSenseEngine
+    class factorytest
+    user root
+    group root
+    disabled
+
+service servicemanager /system/bin/servicemanager
+    class factorytest
+    user root
+    group root
+    critical
+    onrestart restart media
+    onrestart restart drm
+
+service media /system/bin/mediaserver
+    class factorytest
+    user media
+    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc mediadrm
+    ioprio rt 4
+
+service debuggerd /system/bin/debuggerd
+    class factorytest
+    user root
+
+service download-ft /system/bin/download
+    class factorytest
+    user root
+    group root
+
+service wcnd /system/bin/wcnd
+    class factorytest
+    user system
+    group system shell wifi inet net_bt_stack
+
+service srid /system/bin/srid
+    class cali
+    user root
+    oneshot
+
+service batterysrv /system/bin/batterysrv
+    class cali recovery
+    user system
+    group system
+    oneshot

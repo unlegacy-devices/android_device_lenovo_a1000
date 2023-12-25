@@ -9,9 +9,6 @@ import /init.usb.rc
 import /init.${ro.hardware}.rc
 import /init.${ro.zygote}.rc
 import /init.trace.rc
-# Include CM's extra init file
-import /init.cm.rc
-
 
 on early-init
     # Set init and its forked children's oom_adj.
@@ -62,7 +59,6 @@ on init
     write /sys/fs/cgroup/memory/sw/memory.move_charge_at_immigrate 1
     chown root system /sys/fs/cgroup/memory/sw/tasks
     chmod 0660 /sys/fs/cgroup/memory/sw/tasks
-    chmod 0220 /sys/fs/cgroup/memory/cgroup.event_control
 
     mkdir /system
     mkdir /data 0771 system system
@@ -145,6 +141,8 @@ on init
     # Allow everybody to read the xt_qtaguid resource tracking misc dev.
     # This is needed by any process that uses socket tagging.
     chmod 0644 /dev/xt_qtaguid
+    chown system system /dev/sprd_efuse_otp
+    chmod 0660 /dev/sprd_efuse_otp
 
     # Create location for fs_mgr to store abbreviated output from filesystem
     # checker programs.
@@ -168,6 +166,15 @@ on load_all_props_action
 # Indicate to fw loaders that the relevant mounts are up.
 on firmware_mounts_complete
     rm /dev/.booting
+
+on property:sys.crc_check_mode=c
+    exec /system/bin/crc c
+
+on property:sys.crc_check_mode=p
+    exec /system/bin/crc p
+
+on property:sys.crc_check_mode=r
+    exec /system/bin/crc r
 
 # Mount filesystems and start core system services.
 on late-init
@@ -254,7 +261,6 @@ on post-fs-data
     # create basic filesystem structure
     mkdir /data/misc 01771 system misc
     mkdir /data/misc/adb 02750 system shell
-    mkdir /data/misc/audit 02750 audit system
     mkdir /data/misc/bluedroid 0770 bluetooth net_bt_stack
     mkdir /data/misc/bluetooth 0770 system system
     mkdir /data/misc/keystore 0700 keystore keystore
@@ -276,6 +282,8 @@ on post-fs-data
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
     mkdir /data/local 0751 root root
     mkdir /data/misc/media 0700 media media
+    /* SPRD: For saving the hprof */
+    mkdir /data/misc/hprofs 0777 system system
 
     # For security reasons, /data/local/tmp should always be empty.
     # Do not place files or directories in /data/local/tmp
@@ -321,9 +329,6 @@ on post-fs-data
 
     # Set SELinux security contexts on upgrade or policy update.
     restorecon_recursive /data
-    restorecon /data/data
-    restorecon /data/user
-    restorecon /data/user/0
 
     # If there is no fs-post-data action in the init.<device>.rc file, you
     # must uncomment this line, otherwise encrypted filesystems
@@ -352,7 +357,12 @@ on boot
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio  5
+
+    # SPRD: original code @{
+    #write /proc/sys/vm/dirty_background_ratio  5
+    #if dirty pages more than 4M or memery %40 that will tigger writeback flush
+    write /proc/sys/vm/dirty_background_bytes 4194304
+    #@}
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -400,7 +410,6 @@ on boot
     chown system system /sys/class/timed_output/vibrator/enable
     chown system system /sys/class/leds/keyboard-backlight/brightness
     chown system system /sys/class/leds/lcd-backlight/brightness
-    chown system system /sys/class/leds/torch-light/brightness
     chown system system /sys/class/leds/button-backlight/brightness
     chown system system /sys/class/leds/jogball-backlight/brightness
     chown system system /sys/class/leds/red/brightness
@@ -419,8 +428,12 @@ on boot
     chown system system /sys/kernel/ipv4/tcp_rmem_max
     chown root radio /proc/cmdline
 
+    chown system system /dev/sprd_efuse_otp
+    chmod 0660 /dev/sprd_efuse_otp
+
     # Define default initial receive window size in segments.
     setprop net.tcp.default_init_rwnd 60
+    setprop persist.sys.cmdservice.enable disable
 
     class_start core
 
@@ -439,9 +452,6 @@ on property:sys.init_log_level=*
     loglevel ${sys.init_log_level}
 
 on charger
-    chmod 0666 /dev/log/radio
-    chmod 0666 /dev/log/main
-    chmod 0666 /dev/log/event
     class_start charger
 
 on property:vold.decrypt=trigger_reset_main
@@ -497,11 +507,6 @@ service healthd /sbin/healthd
     critical
     seclabel u:r:healthd:s0
 
-service charger /sbin/healthd -c
-    class charger
-    critical
-    seclabel u:r:healthd:s0
-
 service console /system/bin/sh
     class core
     console
@@ -509,10 +514,6 @@ service console /system/bin/sh
     user shell
     group shell log
     seclabel u:r:shell:s0
-
-service auditd /system/bin/auditd -k
-    seclabel u:r:logd:s0
-    class main
 
 on property:ro.debuggable=1
     start console
@@ -557,10 +558,17 @@ service netd /system/bin/netd
     socket fwmarkd stream 0660 root inet
 
 service debuggerd /system/bin/debuggerd
-    class main
+    class core
 
 service debuggerd64 /system/bin/debuggerd64
     class main
+
+service ril-daemon /system/bin/rild
+    class main
+    socket rild stream 660 root radio
+    socket rild-debug stream 660 radio system
+    user root
+    group radio cache inet misc audio log
 
 service surfaceflinger /system/bin/surfaceflinger
     class core
@@ -571,12 +579,13 @@ service surfaceflinger /system/bin/surfaceflinger
 service drm /system/bin/drmserver
     class main
     user drm
-    group drm system inet drmrpc
+    group drm system inet drmrpc sdcard_r sdcard_rw media_rw
+	socket drm_connectivity stream 660 drm system
 
 service media /system/bin/mediaserver
     class main
     user media
-    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc mediadrm qcom_diag
+    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc mediadrm system
     ioprio rt 4
 
 # One shot invocation to deal with encrypted volume.
@@ -608,11 +617,6 @@ service flash_recovery /system/bin/install-recovery.sh
     class main
     seclabel u:r:install_recovery:s0
     oneshot
-    disabled
-
-# update recovery if enabled
-on property:persist.sys.recovery_update=true
-    start flash_recovery
 
 service racoon /system/bin/racoon
     class main
@@ -653,3 +657,24 @@ service pre-recovery /system/bin/uncrypt
     class main
     disabled
     oneshot
+
+service sprd_res_monitor /system/bin/sprd_res_monitor
+    class main
+    user root
+    disabled
+
+service cmd_services /system/bin/cmd_services
+    class main
+    user root
+    disabled
+    oneshot
+
+service phasecheckserver /system/bin/phasecheckserver
+    class main
+    user system
+    group system
+
+on property:persist.sys.cmdservice.enable=enable
+    start cmd_services
+on property:persist.sys.cmdservice.enable=disable
+    stop cmd_services

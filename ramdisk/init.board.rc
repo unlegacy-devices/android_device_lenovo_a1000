@@ -1,44 +1,33 @@
 
-# import /init.storage.rc // for samsung
+import /init.storage.rc
 
 # add for board-relative touch screen driver for
 # alarm mode and normal mode.
+on post-fs
+    insmod /system/lib/modules/focaltech_ts.ko
 
 on boot
 
-    write /sys/class/gpio/export 167
-    write /sys/class/gpio/gpio167/direction out
-    write /sys/class/gpio/gpio167/value 1
-    write /sys/class/gpio/export 168
-    write /sys/class/gpio/gpio168/direction out
-    chown root system /sys/class/gpio/gpio167/value
-    chmod 0664 /sys/class/gpio/gpio167/value
-    chown root system /sys/class/gpio/gpio168/value
-    chmod 0664 /sys/class/gpio/gpio168/value
-    chown system system /sys/class/switch/sprd_simdet/state
-
-#To allow interfaces to get v6 address when tethering is enabled
-     write /proc/sys/net/ipv6/conf/rmnet0/accept_ra 2
-     write /proc/sys/net/ipv6/conf/rmnet1/accept_ra 2
-     write /proc/sys/net/ipv6/conf/rmnet2/accept_ra 2
-
-# bluetooth
-    # UART0 device
-    chmod 660 /dev/ttyS0
-    chown bluetooth net_bt_stack /dev/ttyS0
 
     chmod 660 /proc/bluetooth/sleep/proto
     chmod 660 /sys/class/rfkill/rfkill0/state
     chmod 660 /sys/class/rfkill/rfkill0/type
-    chmod 660 /sys/devices/platform/sprd_wcn.0/pa_enable
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
     chown bluetooth system /proc/bluetooth/sleep/proto
-    chmod 660 /proc/bluetooth/sleep/btwrite
-    chmod 660 /proc/bluetooth/sleep/lpm
-    chown bluetooth net_bt_stack /sys/devices/platform/sprd_wcn.0/pa_enable
-    chown bluetooth system /proc/bluetooth/sleep/btwrite
-    chown bluetooth system /proc/bluetooth/sleep/lpm
+    chown system system /sys/class/flash_test/flash_test/flash_value
+
+    chown bluetooth shell /productinfo/connectivity_configure.ini
+    chown bluetooth shell /system/etc/connectivity_configure.ini
+    chmod 666 /productinfo/connectivity_configure.ini
+    chmod 666 /system/etc/connectivity_configure.ini
+
+    chown wifi shell /productinfo/connectivity_calibration.ini
+    chown wifi shell /system/etc/connectivity_calibration.ini
+    chmod 660 /productinfo/connectivity_calibration.ini
+    chmod 660 /system/etc/connectivity_calibration.ini
+    chmod 666 /dev/sttybt0
+
     mkdir /data/misc/wifi 0770 wifi wifi
     mkdir /data/misc/wifi/sockets 0770 wifi wifi
     mkdir /data/misc/wifi/wpa_supplicant 0770 wifi wifi
@@ -48,18 +37,111 @@ on boot
     chmod 660 /data/misc/wifi/fwpath
     chown wifi wifi /data/misc/wifi/fwpath
     rmdir /data/system/wpa_supplicant
-    mkdir /data/misc/dhcp 0775 dhcp dhcp
+    mkdir /data/misc/dhcp 0770 dhcp dhcp
     chown dhcp dhcp /data/misc/dhcp
     setprop wifi.interface wlan0
+    mkdir /data/misc/dhcp6c 0770 dhcp dhcp
+    chown dhcp system /data/misc/dhcp6c
 
-    mkdir /data/cg/ 0770 system system
-    mkdir /data/cg/online 0770 system system
-    mkdir /data/cg/supl 0770 system system
+
+    mkdir /data/cg/ 0777 system system
+    mkdir /data/cg/online 0777 system system
+    mkdir /data/cg/supl 0777 system system
     chmod 660 /dev/ttyV1
     chmod 660 /dev/ttyV0
+    chmod 777 /system/etc/GPSenseEngine.xml
     chmod 777 /system/etc/HiMap.db
+    chmod 777 /system/bin/GPSenseEngine
+    setprop gps.port ttyV1
 
-    write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 100000
+# Create cgroup mount point for blkio 
+    mkdir /sys/fs/cgroup/blkio 0750 root system
+    mount cgroup none /sys/fs/cgroup/blkio blkio
+    write /sys/fs/cgroup/blkio/blkio.weight 300 
+    chown root system /sys/fs/cgroup/blkio/cgroup.procs
+    chmod 0660 /sys/fs/cgroup/blkio/cgroup.procs
+    mkdir /sys/fs/cgroup/blkio/high 0750 root system
+    write /sys/fs/cgroup/blkio/high/blkio.weight 700 
+    chown root system /sys/fs/cgroup/blkio/high/cgroup.procs
+    chmod 0660 /sys/fs/cgroup/blkio/high/cgroup.procs
+# +++ by niuzhiqiang for runin
+    chown system input /sys/class/input/input0/enable
+    chmod 0664         /sys/class/input/input0/enable
+    chown system input /sys/class/input/input1/enable
+    chmod 0664         /sys/class/input/input1/enable
+    chown system input /sys/class/input/input2/enable
+    chmod 0664         /sys/class/input/input2/enable
+    chown system input /sys/class/input/input3/enable
+    chmod 0664         /sys/class/input/input3/enable
+    chown system input /sys/class/input/input4/enable
+    chmod 0664         /sys/class/input/input4/enable
+# ---
+# +++ by wangjf for als_proc
+    chown system input /sys/class/input/input1/als_onoff
+    chown system input /sys/class/input/input1/proximity_onoff
+    chown system input /sys/class/input/input1/delay
+    chown system input /sys/class/input/input2/als_onoff
+    chown system input /sys/class/input/input2/proximity_onoff
+    chown system input /sys/class/input/input2/delay
+    chown system input /sys/class/input/input3/als_onoff
+    chown system input /sys/class/input/input3/proximity_onoff
+    chown system input /sys/class/input/input3/delay
+    chown system input /sys/class/input/input4/als_onoff
+    chown system input /sys/class/input/input4/proximity_onoff
+    chown system input /sys/class/input/input4/delay
+    chown system input /sys/class/input/input5/als_onoff
+    chown system input /sys/class/input/input5/proximity_onoff
+    chown system input /sys/class/input/input5/delay
+    
+on property:sys.sensor.cmd_set=1
+    start sensorset
+
+on property:sys.sensor.cmd_set=2
+    start sensorset
+
+on property:sys.sensor.cmd_set=3
+    start sensorset
+
+on property:sys.sensor.cmd_set=0
+    stop sensorset
+
+service sensorset /system/bin/sensor_set.sh
+    class main
+    user root
+    disabled
+    oneshot
+
+on property:sys.sensor.prod_set=1
+    start sensorprodset
+
+service sensorprodset /system/bin/sensor_prod_set.sh
+    class main
+    user system
+    disabled
+    oneshot
+
+on property:sys.loopback.run=1
+    start loopbackserver
+on property:sys.loopback.run=0
+    stop loopbackserver
+service loopbackserver /system/bin/ndkloopback
+    class main
+    user root
+    group system audio
+    disabled
+
+service ontimpropsvr /system/bin/ontimpropsvr
+    class main
+    socket ontimpropertys stream 0666 system system
+    user system
+    group system
+    oneshot
+    
+service GPSenseEngine /system/bin/GPSenseEngine
+     class main
+     user root
+     group root
+     disabled
 
 service hfag /system/bin/sdptool add --channel=10 HFAG
     user bluetooth
@@ -98,6 +180,47 @@ service btld  /system/bin/btld -lpm 0 -hb 3000000
     disabled
     oneshot
 
+service p2p_supplicant /system/bin/wpa_supplicant \
+    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf -I/system/etc/wifi/wpa_supplicant_overlay.conf -N \
+    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0 -dd
+    #   we will start as root and wpa_supplicant will switch to user wifi
+    #   after setting up the capabilities required for WEXT
+    #   user wifi
+    #   group wifi inet keystore
+    class main
+    socket wpa_wlan0 dgram 660 wifi wifi
+    disabled
+    oneshot
+
+service wpa_supplicant /system/bin/wpa_supplicant \
+    -Dnl80211 -iwlan0 -c/data/misc/wifi/wpa_supplicant.conf -g@android:wpa_wlan0 -dd
+    group system wifi inet keystore
+    socket wpa_wlan0 dgram 660 wifi wifi
+    disabled
+    oneshot
+
+service dhcpcd_wlan0 /system/bin/dhcpcd -ABKL
+    group system dhcp
+    disabled
+    oneshot
+
+service dhcpcd_p2p /system/bin/dhcpcd -ABKL
+    group system dhcp
+    disabled
+    oneshot
+
+service iprenew_wlan0 /system/bin/dhcpcd -n
+    class main
+    group system dhcp
+    disabled
+    oneshot
+
+service iprenew_p2p /system/bin/dhcpcd -n
+    class main
+    group system dhcp
+    disabled
+    oneshot
+
 service dhcpcd_bnep0 /system/bin/dhcpcd -ABKL
     class main
     disabled
@@ -112,6 +235,14 @@ service dhcpcd_bt-pan /system/bin/dhcpcd -BKLG
    disabled
    oneshot
 
+on property:dhcp.wlan0.start_dhcp6c=true
+   start dhcp6c_wlan0
+on property:dhcp.wlan0.start_dhcp6c=false
+   stop dhcp6c_wlan0
+service dhcp6c_wlan0 /system/bin/dhcp6c -c /data/misc/dhcp6c/dhcp6c.conf wlan0
+   disabled
+   oneshot
+
 
 service iprenew_bt-pan /system/bin/dhcpcd -n
     disabled
@@ -119,32 +250,42 @@ service iprenew_bt-pan /system/bin/dhcpcd -n
 
 service engpcclientw /system/bin/engpc -p w -a /dev/ttyGS0 -d /dev/ttyGS1
     class core
-    user system
-    group system radio shell sdcard_rw
-    disabled
-    oneshot
-
-# set LMK watermark as {14M,20M,24M,32M,38M,48M}
-on property:sys.boot_completed=1
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,3,5,9,15
-    write /sys/module/lowmemorykiller/parameters/minfree 3584,5120,6144,8192,9728,12288
-    
-service engpcclientwcn /system/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
-    class core
-    user system
+    user root
     group system radio shell
     disabled
     oneshot
 
-service wcnd /system/bin/wcnd
+service engpcclientwcn /system/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
     class core
-    #   we will start as root and wcnd will switch to user system
-    #   user system
-    group system shell wifi inet net_bt_stack
-    oneshot
-
-service wcnd_eng /system/bin/wcnd -G
-    class core
-    group system shell wifi inet net_bt_stack
+    user root
+    group system radio shell
     disabled
     oneshot
+
+service slogmodem /system/bin/slogmodem -s sec
+    class main
+    user system
+    group system sdcard_r
+
+service srid /system/bin/srid
+    class main
+    user root
+    oneshot
+
+# set LMK watermark as {18M,30M,54M,66M,78M,90M}
+on property:lmk.autocalc=false
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,3,6,8,10
+    write /sys/module/lowmemorykiller/parameters/minfree 7560,10120,13680,18728,20288,22848
+    setprop sys.lmk.adj "0,1,3,6,8,10"
+    setprop sys.lmk.minfree "7560,10120,13680,18728,20288,22848"
+# +++ by niuzhiqiang for runin
+
+on property:ontim.runin.runtime=1
+    write /productinfo/runintime run_time=1
+    chmod 0666 /productinfo/runintime
+
+on property:ontim.runin.battery=1
+    write /sys/class/power_supply/battery/stop_charge 0
+    
+on property:ontim.runin.battery=2
+    write /sys/class/power_supply/battery/stop_charge 1
