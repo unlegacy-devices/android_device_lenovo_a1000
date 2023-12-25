@@ -47,10 +47,14 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1258291200
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8
 BOARD_KERNEL_PAGESIZE := 2048
+TARGET_KERNEL_CONFIG := cyanogen_grandprimeve3g_defconfig
+TARGET_KERNEL_SOURCE := kernel/samsung/grandprimeve3g
 BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt device/lenovo/a1000/dt.img
 
 # RIL
 BOARD_RIL_CLASS := ../../../device/lenovo/a1000/ril
+
+
 
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
@@ -58,20 +62,16 @@ BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/lenovo/a1000/bluetooth
 
 # Wifi
-BOARD_WLAN_DEVICE := bcmdhd
-BOARD_WLAN_DEVICE_REV := bcm4343
+BOARD_WLAN_DEVICE := sc2331
 WPA_SUPPLICANT_VERSION := VER_0_8_X
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 BOARD_HOSTAPD_DRIVER := NL80211
 BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
-WIFI_DRIVER_FW_PATH_PARAM := "/sys/module/dhd/parameters/firmware_path"
-WIFI_DRIVER_FW_PATH_STA := "/system/etc/wifi/bcmdhd_sta.bin"
-WIFI_DRIVER_FW_PATH_AP := "/system/etc/wifi/bcmdhd_apsta.bin"
-WIFI_DRIVER_NVRAM_PATH_PARAM := "/sys/module/dhd/parameters/nvram_path"
-WIFI_DRIVER_NVRAM_PATH := "/system/etc/wifi/nvram_net.txt"
+WIFI_DRIVER_FW_PATH_PARAM := "/data/misc/wifi/fwpath"
 WIFI_BAND := 802_11_ABG
-BOARD_HAVE_SAMSUNG_WIFI := false
+WIFI_DRIVER_MODULE_PATH := "/system/lib/modules/sprdwl.ko"
+WIFI_DRIVER_MODULE_NAME := "sprdwl"
 
 # Hardware rendering
 BOARD_USE_MHEAP_SCREENSHOT := true
@@ -147,7 +147,7 @@ TWHAVE_SELINUX := true
 TARGET_RECOVERY_INITRC := device/lenovo/a1000/etc/init.rc
 TARGET_RECOVERY_FSTAB := device/lenovo/a1000/ramdisk/fstab.sc8830
 TW_HAS_DOWNLOAD_MODE := true
-DEVICE_RESOLUTION := 540x960
+DEVICE_RESOLUTION := 480x800
 TW_THEME := portrait_mdpi
 BOARD_USE_CUSTOM_RECOVERY_FONT := \"roboto_10x18.h\"
 
