@@ -30,10 +30,10 @@ jobs:
         cd ~/TWRP
         mkdir ~/.bin
         curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-        python3 ~/.bin/repo init --depth=1 -u https://github.com/LineageOS/android.git -b cm-12.1
-        git clone https://github.com/unlegacy-devices/android_device_lenovo_a1000 -b cm-13.0 ~/TWRP/device/lenovo/a1000
+        python3 ~/.bin/repo init --depth=1 -u https://github.com/CyanogenMod/android.git -b cm-12.1
+        git clone https://github.com/unlegacy-devices/android_device_lenovo_a1000 -b cm-12.1 ~/TWRP/device/lenovo/a1000
         git clone https://github.com/unlegacy-devices/android_kernel_samsung_grandprimeve3g -b cm-13.0 ~/TWRP/kernel/samsung/grandprimeve3g
-        git clone https://github.com/unlegacy-devices/android_vendor_lenovo_a1000 -b cm-13.0 ~/TWRP/vendor/lenovo/a1000
+        git clone https://github.com/unlegacy-devices/android_vendor_lenovo_a1000 -b cm-12.1 ~/TWRP/vendor/lenovo/a1000
         git clone --depth 1 --branch android-6.0.1_r40 --single-branch https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8 /opt/toolchains/arm-eabi-4.8/
         python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
     - name: Building LineageOS
@@ -43,17 +43,12 @@ jobs:
         export PATH="$HOME/.jdk_7/java-se-7u75-ri/bin:$PATH"
         export JAVA_HOME="$HOME/.jdk_7/java-se-7u75-ri"
         cd ~/TWRP
-        git clone https://github.com/unlegacy-devices/android_device_lenovo_scx30g2-common -b cm-13.0 ~/TWRP/device/lenovo/scx30g2-common
-        git clone https://github.com/unlegacy-devices/android_device_lenovo_scx35-common -b cm-13.0 ~/TWRP/device/lenovo/scx35-common
-        git clone https://github.com/unlegacy-devices/android_vendor_lenovo_scx30g2-common -b cm-13.0 ~/TWRP/vendor/lenovo/scx30g2-common
-        git clone https://github.com/unlegacy-devices/android_device_lenovo_sprd-common -b cm-13.0 ~/TWRP/device/lenovo/sprd-common
-        git clone https://github.com/diepquynh/android_hardware_sprd -b cm-13.0 ~/TWRP/hardware/sprd
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
-        lunch lineage_a1000-eng
+        lunch cm_a1000-eng
         make -j$(nproc --all) otapackage
         export PATH=$OLDPATH
         export JAVA_HOME=$OLDJAVAHOME
