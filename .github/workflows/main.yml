@@ -24,6 +24,9 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '8'
+    - name: Check java directory
+      run: |
+        update-alternatives --list java
     - name: Syncing LineageOS sources
       run: |
         mkdir ~/TWRP
