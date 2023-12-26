@@ -18,6 +18,9 @@
 # In particular, you can add lunch options with the add_lunch_combo
 # function: add_lunch_combo generic-eng
 
+# Apply patches first
+sh device/lenovo/a1000/patches/apply.sh;
+
 for i in eng user userdebug; do
 add_lunch_combo cm_a1000-${i};
 done
