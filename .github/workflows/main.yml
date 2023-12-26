@@ -42,6 +42,8 @@ jobs:
         export PATH="$HOME/.jdk_7/java-se-7u75-ri/bin:$PATH"
         export JAVA_HOME="$HOME/.jdk_7/java-se-7u75-ri"
         cd ~/TWRP
+        rm -rf ~/TWRP/android/build
+        git clone https://github.com/NotNoelChannel/android_build -b cm-12.1 ~/TWRP/android/build
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         source build/envsetup.sh
