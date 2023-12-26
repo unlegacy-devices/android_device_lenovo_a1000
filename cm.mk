@@ -1,3 +1,5 @@
+# Specify phone tech before including full_phone	
+$(call inherit-product, vendor/cm/config/telephony.mk)
 
 # Release name
 PRODUCT_RELEASE_NAME := a1000
